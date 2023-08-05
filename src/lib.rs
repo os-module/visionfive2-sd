@@ -335,8 +335,7 @@ fn check_big_support(sleep:fn(usize))->bool{
     true
 }
 
-
-pub fn init_sdcard(sleep:fn(usize)){
+ fn init_sdcard(sleep:fn(usize)){
     // read DETECT_REG
     let detect = read_reg(CDETECT_REG);
     info!("detect: {:#?}", CDetectReg::try_from(detect).unwrap());
