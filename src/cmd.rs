@@ -1,25 +1,25 @@
-#[derive(Debug,Copy, Clone)]
-pub enum Cmd{
+#[derive(Debug, Copy, Clone)]
+pub enum Cmd {
     GoIdleState,
     AllSendCid,
     SendRelativeAddr,
     SetDSR,
     SelectCard,
-    SendIfCond ,
+    SendIfCond,
     SendCsd,
     SendCid,
-    StopTransmission ,
+    StopTransmission,
     SendStatus,
     GoInactiveState,
     SetBlockLen,
     ReadSingleBlock,
-    ReadMultipleBlock ,
+    ReadMultipleBlock,
     WriteSingleBlock,
     WriteMultipleBlock,
     EraseWrBlkStart,
     EraseWrBlkEnd,
     Erase,
-    AppCmd ,
+    AppCmd,
     GenCmd,
     SetBusWidth,
     SdStatus,
@@ -31,7 +31,7 @@ pub enum Cmd{
     // Private
     ResetClock,
 }
-impl Into<u8> for Cmd{
+impl Into<u8> for Cmd {
     fn into(self) -> u8 {
         match self {
             Cmd::GoIdleState => 0,
@@ -63,7 +63,7 @@ impl Into<u8> for Cmd{
             Cmd::SetClrCardDetect => 42,
             Cmd::SendScr => 51,
             _ => {
-                panic!("Not implemented for cmd {:?}",self);
+                panic!("Not implemented for cmd {:?}", self);
             }
         }
     }

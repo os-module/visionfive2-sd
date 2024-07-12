@@ -1,40 +1,47 @@
+use crate::cmd::Cmd;
 use alloc::format;
 use alloc::string::{String, ToString};
 use bit_field::BitField;
-use bit_struct::{*};
-use crate::cmd::Cmd;
+use bit_struct::*;
 
-pub const SDIO_BASE:usize = 0x16020000;
-pub const CTRL_REG:usize = SDIO_BASE + 0x00;
-pub const POWER_REG:usize = SDIO_BASE + 0x04;
-pub const BLK_SIZE_REG:usize = SDIO_BASE + 0x1c;
-pub const BYTE_CNT_REG:usize = SDIO_BASE + 0x20;
-pub const CMD_REG:usize = SDIO_BASE + 0x2c;
-pub const ARG_REG:usize = SDIO_BASE + 0x28;
-pub const RESP0_REG:usize = SDIO_BASE + 0x30;
-pub const RESP1_REG:usize = SDIO_BASE + 0x34;
-pub const RESP2_REG:usize = SDIO_BASE + 0x38;
-pub const RESP3_REG:usize = SDIO_BASE + 0x3c;
-pub const STATUS_REG:usize = SDIO_BASE + 0x48;
-pub const CDETECT_REG:usize = SDIO_BASE + 0x50;
-pub const BUS_MODE_REG:usize = SDIO_BASE + 0x80;
-pub const CTYPE_REG:usize = SDIO_BASE + 0x18;
-pub const CLOCK_ENABLE_REG:usize = SDIO_BASE + 0x10;
-pub const DBADDRL_REG:usize = SDIO_BASE + 0x88; // DMA DES Address Lower
-pub const DBADDRU_REG:usize = SDIO_BASE + 0x8c; // DMA DES Address Upper
-pub const CLK_DIVIDER_REG:usize = SDIO_BASE + 0x08;
-pub const RAW_INT_STATUS_REG:usize = SDIO_BASE + 0x44;
-pub const FIFO_DATA_REG:usize = SDIO_BASE + 0x600;
+pub const SDIO_BASE: usize = 0x16020000;
+pub const CTRL_REG: usize = SDIO_BASE + 0x00;
+pub const POWER_REG: usize = SDIO_BASE + 0x04;
+pub const BLK_SIZE_REG: usize = SDIO_BASE + 0x1c;
+pub const BYTE_CNT_REG: usize = SDIO_BASE + 0x20;
+pub const CMD_REG: usize = SDIO_BASE + 0x2c;
+pub const ARG_REG: usize = SDIO_BASE + 0x28;
+pub const RESP0_REG: usize = SDIO_BASE + 0x30;
+pub const RESP1_REG: usize = SDIO_BASE + 0x34;
+pub const RESP2_REG: usize = SDIO_BASE + 0x38;
+pub const RESP3_REG: usize = SDIO_BASE + 0x3c;
+pub const STATUS_REG: usize = SDIO_BASE + 0x48;
+pub const CDETECT_REG: usize = SDIO_BASE + 0x50;
+pub const BUS_MODE_REG: usize = SDIO_BASE + 0x80;
+pub const CTYPE_REG: usize = SDIO_BASE + 0x18;
+pub const CLOCK_ENABLE_REG: usize = SDIO_BASE + 0x10;
+pub const DBADDRL_REG: usize = SDIO_BASE + 0x88; // DMA DES Address Lower
+pub const DBADDRU_REG: usize = SDIO_BASE + 0x8c; // DMA DES Address Upper
+pub const CLK_DIVIDER_REG: usize = SDIO_BASE + 0x08;
+pub const RAW_INT_STATUS_REG: usize = SDIO_BASE + 0x44;
+pub const FIFO_DATA_REG: usize = SDIO_BASE + 0x600;
 
+pub struct CmdArg(u32);
+impl CmdArg {
+    pub fn new(value: u32) -> Self {
+        CmdArg(value)
+    }
+    pub fn raw(&self) -> u32 {
+        self.0
+    }
+}
 
 bit_struct! {
     pub struct PowerReg(u32){
         reserved:u2,
         power_enable:u30,
     }
-    pub struct CmdArg(u32){
-        arg:u32,
-    }
+
     pub struct BlkSizeReg(u32){
         reserved:u16,
         block_size:u16,
@@ -361,7 +368,6 @@ bit_struct! {
 
 }
 
-
 // mid:u8,
 // oid:u16,
 // pnm:u32,
@@ -372,24 +378,31 @@ bit_struct! {
 // crc:u7,
 // zero:u1,
 pub struct Cid(u128);
-impl Cid{
-    pub fn new(value:u128) -> Self {
+impl Cid {
+    pub fn new(value: u128) -> Self {
         Cid(value)
     }
     pub fn fmt(&self) -> String {
         let mid = self.0.get_bits(120..=127) as u8;
-        let oid = self.0.get_bits(104..=119) as u16;// 2char
-        let oid = core::str::from_utf8(&oid.to_be_bytes()).unwrap().to_string();
-        let pnm = self.0.get_bits(64..=103) as u64;// 5char
-        let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5]).unwrap().to_string();
-        let prv_big = self.0.get_bits(60..=63) as u8;//
-        let prv_small = self.0.get_bits(56..=59) as u8;//
-        let prv = format!("{}.{}",prv_big,prv_small);
-        let psn = self.0.get_bits(24..=55) as u32;//
-        let year = self.0.get_bits(12..=19) as u8;//
-        let month = self.0.get_bits(8..=11) as u8;//
-        let mdt = format!("{}-{}",year as usize + 2000,month);
-        let res = format!("mid:{} oid:{} pnm:{} prv:{} psn:{} mdt:{}",mid,oid,pnm,prv,psn,mdt);
+        let oid = self.0.get_bits(104..=119) as u16; // 2char
+        let oid = core::str::from_utf8(&oid.to_be_bytes())
+            .unwrap()
+            .to_string();
+        let pnm = self.0.get_bits(64..=103) as u64; // 5char
+        let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5])
+            .unwrap()
+            .to_string();
+        let prv_big = self.0.get_bits(60..=63) as u8; //
+        let prv_small = self.0.get_bits(56..=59) as u8; //
+        let prv = format!("{}.{}", prv_big, prv_small);
+        let psn = self.0.get_bits(24..=55) as u32; //
+        let year = self.0.get_bits(12..=19) as u8; //
+        let month = self.0.get_bits(8..=11) as u8; //
+        let mdt = format!("{}-{}", year as usize + 2000, month);
+        let res = format!(
+            "mid:{} oid:{} pnm:{} prv:{} psn:{} mdt:{}",
+            mid, oid, pnm, prv, psn, mdt
+        );
         res
     }
 
@@ -397,46 +410,49 @@ impl Cid{
         self.0.get_bits(120..=127) as u8
     }
     pub fn oid(&self) -> String {
-        let oid = self.0.get_bits(104..=119) as u16;// 2char
-        let oid = core::str::from_utf8(&oid.to_be_bytes()).unwrap().to_string();
+        let oid = self.0.get_bits(104..=119) as u16; // 2char
+        let oid = core::str::from_utf8(&oid.to_be_bytes())
+            .unwrap()
+            .to_string();
         oid
     }
     pub fn pnm(&self) -> String {
-        let pnm = self.0.get_bits(64..=103) as u64;// 5char
-        let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5]).unwrap().to_string();
+        let pnm = self.0.get_bits(64..=103) as u64; // 5char
+        let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5])
+            .unwrap()
+            .to_string();
         pnm
     }
     pub fn prv(&self) -> String {
-        let prv_big = self.0.get_bits(60..=63) as u8;//
-        let prv_small = self.0.get_bits(56..=59) as u8;//
-        let prv = format!("{}.{}",prv_big,prv_small);
+        let prv_big = self.0.get_bits(60..=63) as u8; //
+        let prv_small = self.0.get_bits(56..=59) as u8; //
+        let prv = format!("{}.{}", prv_big, prv_small);
         prv
     }
     pub fn psn(&self) -> u32 {
         self.0.get_bits(24..=55) as u32
     }
     pub fn mdt(&self) -> String {
-        let year = self.0.get_bits(12..=19) as u8;//
-        let month = self.0.get_bits(8..=11) as u8;//
-        let mdt = format!("{}-{}",year as usize + 2000,month);
+        let year = self.0.get_bits(12..=19) as u8; //
+        let month = self.0.get_bits(8..=11) as u8; //
+        let mdt = format!("{}-{}", year as usize + 2000, month);
         mdt
     }
 }
 
-impl RawInterrupt{
+impl RawInterrupt {
     pub fn have_error(&mut self) -> bool {
         self.rto().get_raw() == 1
             || self.dcrc().get_raw() == 1
             || self.response_err().get_raw() == 1
-            || self.drto().get_raw() ==1
-            || self.sbe().get_raw() ==1
-            || self.ebe().get_raw() ==1
+            || self.drto().get_raw() == 1
+            || self.sbe().get_raw() == 1
+            || self.ebe().get_raw() == 1
     }
 }
 
-
 impl CmdReg {
-    pub fn default(card_number:usize,cmd_number:u8)->Self{
+    pub fn default(card_number: usize, cmd_number: u8) -> Self {
         let mut cmd = CmdReg::try_from(0).unwrap();
         cmd.start_cmd().set(u1!(1));
         cmd.use_hold_reg().set(u1!(1));
@@ -449,13 +465,13 @@ impl CmdReg {
         cmd.cmd_index().set(cmd_index);
         cmd
     }
-    pub fn with_no_data(card_number:usize,cmd_number:u8) -> Self {
-        let cmd = CmdReg::default(card_number,cmd_number);
+    pub fn with_no_data(card_number: usize, cmd_number: u8) -> Self {
+        let cmd = CmdReg::default(card_number, cmd_number);
         cmd
     }
 
-    pub fn with_data(card_number:usize,cmd_number:u8)->Self{
-        let mut cmd = CmdReg::default(card_number,cmd_number);
+    pub fn with_data(card_number: usize, cmd_number: u8) -> Self {
+        let mut cmd = CmdReg::default(card_number, cmd_number);
         cmd.data_expected().set(u1!(1));
         cmd
     }
@@ -469,10 +485,7 @@ impl From<Cmd> for CmdReg {
                 cmd0.send_initialization().set(u1!(1));
                 cmd0
             }
-            Cmd::SendIfCond
-            |Cmd::AppCmd
-            |Cmd::SendRelativeAddr
-            |Cmd::SelectCard=> {
+            Cmd::SendIfCond | Cmd::AppCmd | Cmd::SendRelativeAddr | Cmd::SelectCard => {
                 let cmd = CmdReg::with_no_data(0, value.into());
                 cmd
             }
@@ -492,8 +505,7 @@ impl From<Cmd> for CmdReg {
                 cmd2.response_length().set(u1!(1)); // long response
                 cmd2
             }
-            Cmd::SendScr
-            |Cmd::ReadSingleBlock=> {
+            Cmd::SendScr | Cmd::ReadSingleBlock => {
                 let cmd = CmdReg::with_data(0, value.into());
                 cmd
             }
