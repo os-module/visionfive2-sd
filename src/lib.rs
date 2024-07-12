@@ -6,7 +6,6 @@ use crate::cmd::*;
 use crate::register::*;
 use crate::utils::*;
 use bit_field::BitField;
-use bit_struct::*;
 use core::fmt::{Display, Formatter};
 use core::mem::size_of;
 use log::{debug, error, info, trace, warn};
@@ -24,40 +23,38 @@ enum DataTransType<'a> {
 
 fn wait_ms_util_can_send_cmd(ms: usize) -> bool {
     wait_ms(ms, || {
-        let mut cmd_reg = CmdReg::try_from(read_reg(CMD_REG)).unwrap();
-        cmd_reg.start_cmd().get_raw() == 0
+        let mut cmd_reg = CmdReg::from(read_reg(CMD_REG));
+        !cmd_reg.start_cmd()
     });
-    let mut cmd_reg = CmdReg::try_from(read_reg(CMD_REG)).unwrap();
-    cmd_reg.start_cmd().get_raw() == 0
+    let mut cmd_reg = CmdReg::from(read_reg(CMD_REG));
+    !cmd_reg.start_cmd()
 }
 
 fn wait_ms_util_can_send_data(ms: usize) -> bool {
     wait_ms(ms, || {
-        let mut status_reg = StatusReg::try_from(read_reg(STATUS_REG)).unwrap();
-        status_reg.data_busy().get_raw() == 0
+        let mut status_reg = StatusReg::from(read_reg(STATUS_REG));
+        !status_reg.data_busy()
     });
     let mut status_reg = StatusReg::try_from(read_reg(STATUS_REG)).unwrap();
-    status_reg.data_busy().get_raw() == 0
+    !status_reg.data_busy()
 }
 
 fn wait_ms_util_response(ms: usize) -> bool {
     wait_ms(ms, || {
-        let mut raw_int_status_reg =
-            RawInterruptStatusReg::try_from(read_reg(RAW_INT_STATUS_REG)).unwrap();
-        let int = raw_int_status_reg.int_status().get();
-        let mut raw_int_status = RawInterrupt::try_from(int).unwrap();
-        raw_int_status.command_done().get_raw() == 1
+        let mut raw_int_status_reg = RawInterruptStatusReg::from(read_reg(RAW_INT_STATUS_REG));
+        let int = raw_int_status_reg.int_status();
+        let mut raw_int_status = RawInterrupt::from(int);
+        raw_int_status.command_done()
     });
-    let mut raw_int_status_reg =
-        RawInterruptStatusReg::try_from(read_reg(RAW_INT_STATUS_REG)).unwrap();
-    let int = raw_int_status_reg.int_status().get();
-    let mut raw_int_status = RawInterrupt::try_from(int).unwrap();
-    raw_int_status.command_done().get_raw() == 1
+    let mut raw_int_status_reg = RawInterruptStatusReg::from(read_reg(RAW_INT_STATUS_REG));
+    let int = raw_int_status_reg.int_status();
+    let mut raw_int_status = RawInterrupt::from(int);
+    raw_int_status.command_done()
 }
 
 fn fifo_filled_cnt() -> usize {
-    let mut status = StatusReg::try_from(read_reg(STATUS_REG)).unwrap();
-    status.fifo_count().get_raw() as usize
+    let mut status = StatusReg::from(read_reg(STATUS_REG));
+    status.fifo_count() as usize
 }
 
 fn send_cmd(
@@ -68,24 +65,24 @@ fn send_cmd(
 ) -> Option<[u32; 4]> {
     let res = wait_ms_util_can_send_cmd(0);
     assert!(res);
-    if cmd.data_expected().get_raw() == 1 {
+    if cmd.data_expected() {
         let res = wait_ms_util_can_send_data(0);
         assert!(res)
     }
     info!("send cmd type:{:?}, value:{:#?}", cmd_type, cmd);
     // write arg
-    write_reg(ARG_REG, arg.raw());
-    write_reg(CMD_REG, cmd.raw());
+    write_reg(ARG_REG, arg.into());
+    write_reg(CMD_REG, cmd.into());
     // Wait for cmd accepted
     let command_accept = wait_ms_util_can_send_cmd(0);
     info!("command accepted {}", command_accept);
 
-    if cmd.response_expect().get_raw() == 1 {
+    if cmd.response_expect() {
         let res = wait_ms_util_response(0);
         debug!("wait_ms_util_response:{:?}", res);
     }
 
-    if cmd.data_expected().get_raw() == 1 {
+    if cmd.data_expected() {
         let mut fifo_addr = FIFO_DATA_REG;
         match data_trans_type {
             DataTransType::Read(buffer) => {
@@ -94,9 +91,9 @@ fn send_cmd(
                 wait_ms(0, || {
                     let mut raw_int_status_reg =
                         RawInterruptStatusReg::try_from(read_reg(RAW_INT_STATUS_REG)).unwrap();
-                    let int = raw_int_status_reg.int_status().get();
-                    let mut raw_int_status = RawInterrupt::try_from(int).unwrap();
-                    if raw_int_status.rxdr().get_raw() == 1 {
+                    let int = raw_int_status_reg.int_status();
+                    let mut raw_int_status = RawInterrupt::from(int);
+                    if raw_int_status.rxdr() {
                         debug!("RXDR....");
                         while fifo_filled_cnt() >= 2 {
                             buffer[buf_offset] = read_fifo::<usize>(fifo_addr);
@@ -104,7 +101,7 @@ fn send_cmd(
                             fifo_addr += size_of::<usize>();
                         }
                     }
-                    raw_int_status.dto().get_raw() == 1 || raw_int_status.have_error()
+                    raw_int_status.dto() || raw_int_status.have_error()
                 });
                 info!(
                     "buf_offset:{}, receive {} bytes",
@@ -116,8 +113,8 @@ fn send_cmd(
                 let mut buf_offset = 0;
                 wait_ms(0, || {
                     let raw_int_status = read_reg(RAW_INT_STATUS_REG);
-                    let mut raw_int_status = RawInterrupt::try_from(raw_int_status as u16).unwrap();
-                    if raw_int_status.txdr().get_raw() == 1 {
+                    let mut raw_int_status = RawInterrupt::from(raw_int_status as u16);
+                    if raw_int_status.txdr() {
                         debug!("TXDR....");
                         // Hard coded FIFO depth
                         while fifo_filled_cnt() < 120 && buf_offset < buffer.len() {
@@ -126,7 +123,7 @@ fn send_cmd(
                             fifo_addr += size_of::<usize>();
                         }
                     }
-                    raw_int_status.dto().get_raw() == 1 || raw_int_status.have_error()
+                    raw_int_status.dto() || raw_int_status.have_error()
                 });
                 info!("buf_offset:{}, send {} bytes", buf_offset, buf_offset * 8);
             }
@@ -140,8 +137,8 @@ fn send_cmd(
     let raw_int_status = read_reg(RAW_INT_STATUS_REG);
     write_reg(RAW_INT_STATUS_REG, raw_int_status);
     // check error
-    let mut raw_int_status = RawInterruptStatusReg::try_from(raw_int_status).unwrap();
-    let mut raw_int_status = RawInterrupt::try_from(raw_int_status.int_status().get()).unwrap();
+    let mut raw_int_status = RawInterruptStatusReg::from(raw_int_status);
+    let mut raw_int_status = RawInterrupt::from(raw_int_status.int_status());
     let resp = [
         read_reg(RESP0_REG),
         read_reg(RESP1_REG),
@@ -159,14 +156,14 @@ fn send_cmd(
 
 fn reset_clock() {
     // disable clock
-    let mut clock_enable = ClockEnableReg::new(0, 0);
+    let mut clock_enable = ClockEnableReg::from(0);
     // write to CLOCK_ENABLE_REG
-    write_reg(CLOCK_ENABLE_REG, clock_enable.raw());
+    write_reg(CLOCK_ENABLE_REG, clock_enable.into());
     // send reset clock command
-    let mut clock_cmd = CmdReg::try_from(0).unwrap();
-    clock_cmd.start_cmd().set(u1!(1));
-    clock_cmd.wait_prvdata_complete().set(u1!(1));
-    clock_cmd.update_clock_registers_only().set(u1!(1));
+    let mut clock_cmd = CmdReg::from(0)
+        .with_start_cmd(true)
+        .with_wait_prvdata_complete(true)
+        .with_update_clock_registers_only(true);
     send_cmd(
         Cmd::ResetClock,
         clock_cmd,
@@ -174,12 +171,12 @@ fn reset_clock() {
         DataTransType::None,
     );
     // set clock divider to 400kHz (low)
-    let clock_divider = ClockDividerReg::new(0, 0, 0, 4);
-    write_reg(CLK_DIVIDER_REG, clock_divider.raw());
+    let clock_divider = ClockDividerReg::new().with_clk_divider0(4);
+    write_reg(CLK_DIVIDER_REG, clock_divider.into());
     // send_cmd(Cmd::ResetClock,clock_disable_cmd,CmdArg::new(0));
     // enable clock
-    clock_enable.clk_enable().set(1);
-    write_reg(CLOCK_ENABLE_REG, clock_enable.raw());
+    clock_enable.set_clk_enable(1);
+    write_reg(CLOCK_ENABLE_REG, clock_enable.into());
     // send reset clock command
     send_cmd(
         Cmd::ResetClock,
@@ -189,42 +186,37 @@ fn reset_clock() {
     );
     info!(
         "now clk enable {:#?}",
-        ClockEnableReg::try_from(read_reg(CLOCK_ENABLE_REG)).unwrap()
+        ClockEnableReg::from(read_reg(CLOCK_ENABLE_REG))
     );
     pprintln!("reset clock success");
 }
 
 fn reset_fifo() {
-    let mut ctrl = ControlReg::try_from(read_reg(CTRL_REG)).unwrap();
-    ctrl.fifo_reset().set(u1!(1));
+    let mut ctrl = ControlReg::from(read_reg(CTRL_REG)).with_fifo_reset(true);
     // todo!(why write to fifo data)?
     // write_reg(CTRL_REG,ctrl.raw());
-    write_reg(FIFO_DATA_REG, ctrl.raw());
+    write_reg(FIFO_DATA_REG, ctrl.into());
     pprintln!("reset fifo success");
 }
 
 fn reset_dma() {
-    let mut buf_mode_reg = BusModeReg::try_from(read_reg(BUS_MODE_REG)).unwrap();
-    buf_mode_reg.de().set(u1!(0));
-    buf_mode_reg.swr().set(u1!(1));
-    write_reg(BUS_MODE_REG, buf_mode_reg.raw());
-    let mut ctrl = ControlReg::try_from(read_reg(CTRL_REG)).unwrap();
+    let mut buf_mode_reg = BusModeReg::from(read_reg(BUS_MODE_REG))
+        .with_de(false)
+        .with_swr(true);
+    write_reg(BUS_MODE_REG, buf_mode_reg.into());
+    let mut ctrl = ControlReg::from(read_reg(CTRL_REG))
+        .with_dma_reset(true)
+        .with_use_internal_dmac(false);
     // ctrl.dma_enable().set(u1!(0));
-    ctrl.dma_reset().set(u1!(1));
-    ctrl.use_internal_dmac().set(u1!(0));
-    write_reg(CTRL_REG, ctrl.raw());
+    write_reg(CTRL_REG, ctrl.into());
     pprintln!("reset dma success");
 }
 
 fn set_transaction_size(blk_size: u32, byte_count: u32) {
-    let val = blk_size as u16;
-    let mut blk_size = BlkSizeReg::try_from(0).unwrap();
-    blk_size.block_size().set(val);
-    write_reg(BLK_SIZE_REG, blk_size.raw());
-    let value = byte_count;
-    let mut byte_count = ByteCountReg::try_from(0).unwrap();
-    byte_count.byte_count().set(value);
-    write_reg(BYTE_CNT_REG, byte_count.raw());
+    let mut blk_size = BlkSizeReg::new(blk_size);
+    write_reg(BLK_SIZE_REG, blk_size.into());
+    let mut byte_count = ByteCountReg::new(byte_count);
+    write_reg(BYTE_CNT_REG, byte_count.into());
 }
 
 fn test_read() {
@@ -393,31 +385,22 @@ fn check_big_support(sleep: fn(usize)) -> bool {
 fn init_sdcard(sleep: fn(usize)) {
     // read DETECT_REG
     let detect = read_reg(CDETECT_REG);
-    info!("detect: {:#?}", CDetectReg::try_from(detect).unwrap());
+    info!("detect: {:#?}", CDetectReg::new(detect));
     // read POWER_REG
     let power = read_reg(POWER_REG);
-    info!("power: {:#?}", PowerReg::try_from(power).unwrap());
+    info!("power: {:#?}", PowerReg::new(power));
     // read CLOCK_ENABLE_REG
     let clock_enable = read_reg(CLOCK_ENABLE_REG);
-    info!(
-        "clock_enable: {:#?}",
-        ClockEnableReg::try_from(clock_enable).unwrap()
-    );
+    info!("clock_enable: {:#?}", ClockEnableReg::from(clock_enable));
     // read CARD_TYPE_REG
     let card_type = read_reg(CTYPE_REG);
-    info!(
-        "card_type: {:#?}",
-        CardTypeReg::try_from(card_type).unwrap()
-    );
+    info!("card_type: {:#?}", CardTypeReg::from(card_type));
     // read Control Register
     let control = read_reg(CTRL_REG);
     info!("control: {:#?}", ControlReg::try_from(control).unwrap());
     // read  bus mode register
     let bus_mode = read_reg(BUS_MODE_REG);
-    info!(
-        "bus_mode(DMA): {:#?}",
-        BusModeReg::try_from(bus_mode).unwrap()
-    );
+    info!("bus_mode(DMA): {:#?}", BusModeReg::from(bus_mode));
     // read DMA Descriptor List Base Address Register
     let dma_desc_base_lower = read_reg(DBADDRL_REG);
     let dma_desc_base_upper = read_reg(DBADDRU_REG);
@@ -425,10 +408,7 @@ fn init_sdcard(sleep: fn(usize)) {
     info!("dma_desc_base: {:#x?}", dma_desc_base);
     // read clock divider register
     let clock_divider = read_reg(CLK_DIVIDER_REG);
-    info!(
-        "clock_divider: {:#?}",
-        ClockDividerReg::try_from(clock_divider).unwrap()
-    );
+    info!("clock_divider: {:#?}", ClockDividerReg::from(clock_divider));
 
     // reset card clock to 400Mhz
     reset_clock();
@@ -436,9 +416,8 @@ fn init_sdcard(sleep: fn(usize)) {
     reset_fifo();
 
     // set data width --> 1bit
-    let mut ctype = CardTypeReg::try_from(0).unwrap();
-    ctype.card_width4_1().set(0);
-    write_reg(CTYPE_REG, ctype.raw());
+    let mut ctype = CardTypeReg::from(0).with_card_width4_1(0);
+    write_reg(CTYPE_REG, ctype.into());
 
     // reset dma
     reset_dma();
@@ -466,8 +445,8 @@ fn init_sdcard(sleep: fn(usize)) {
 
     select_card(rca);
 
-    let mut status = StatusReg::try_from(read_reg(STATUS_REG)).unwrap();
-    info!("Now FIFO Count is {}", status.fifo_count().get_raw());
+    let mut status = StatusReg::from(read_reg(STATUS_REG));
+    info!("Now FIFO Count is {}", status.fifo_count());
 
     // check bus width
     check_bus_width(rca);
@@ -482,7 +461,7 @@ fn init_sdcard(sleep: fn(usize)) {
     let raw_int_status = RawInterruptStatusReg::try_from(read_reg(RAW_INT_STATUS_REG)).unwrap();
     info!("RAW_INT_STATUS_REG: {:#?}", raw_int_status);
     // Clear interrupt by writing 1
-    write_reg(RAW_INT_STATUS_REG, raw_int_status.raw());
+    write_reg(RAW_INT_STATUS_REG, raw_int_status.into());
 
     pprintln!("init sd success");
 }
