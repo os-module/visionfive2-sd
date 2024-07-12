@@ -3,7 +3,7 @@ ARCH := riscv64
 MODE := release
 OUTPUT := target/$(ARCH)gc-unknown-none-elf/$(MODE)
 TARGET := riscv64gc-unknown-none-elf
-TFTP_PATH := ../../../tftpboot/
+TFTP_PATH := ../../../../tftpboot/
 
 build:
 	@cargo build  --$(MODE) --target $(TARGET)

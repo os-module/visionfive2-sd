@@ -18,4 +18,4 @@ visionfive2-sd = { path = "../../../visionfive2-sd" }
 riscv = "0"
 buddy_system_allocator = "0.8.0"
 
-vf2_driver = { path = "../vf2_driver" }
+#vf2_driver = { path = "../vf2_driver" }
