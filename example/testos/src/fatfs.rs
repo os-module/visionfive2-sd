@@ -3,11 +3,11 @@ use alloc::string::String;
 use fatfs::{IoBase, Read, Seek, SeekFrom, Write};
 use log::error;
 
-use visionfive2_sd::Vf2SdDriver;
+use visionfive2_sd::{SDIo, Vf2SdDriver};
 
-use crate::println;
+use crate::{println, SdIoImpl, SleepOpsImpl};
 
-pub fn init_fatfs(mmc: Vf2SdDriver) {
+pub fn init_fatfs(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) {
     let buf_stream = BufStream::new(mmc);
     let fs = fatfs::FileSystem::new(buf_stream, fatfs::FsOptions::new()).unwrap();
     let root_dir = fs.root_dir();
@@ -28,11 +28,11 @@ pub fn init_fatfs(mmc: Vf2SdDriver) {
 
 struct BufStream {
     offset: usize,
-    mmc: Vf2SdDriver,
+    mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>,
 }
 
 impl BufStream {
-    pub fn new(mmc: Vf2SdDriver) -> BufStream {
+    pub fn new(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) -> BufStream {
         Self { offset: 0, mmc }
     }
 }

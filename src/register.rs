@@ -1,7 +1,5 @@
 use crate::cmd::Cmd;
-use alloc::format;
-use alloc::string::{String, ToString};
-use bit_field::BitField;
+use crate::utils::GetBit;
 use bitfield_struct::bitfield;
 
 pub const SDIO_BASE: usize = 0x16020000;
@@ -411,27 +409,35 @@ pub struct RawInterrupt {
 // mdt:u12,
 // crc:u7,
 // zero:u1,
+
+#[derive(Debug)]
 pub struct Cid(u128);
+
+#[allow(dead_code)]
 impl Cid {
     pub fn new(value: u128) -> Self {
         Cid(value)
     }
-    pub fn fmt(&self) -> String {
-        let mid = self.0.get_bits(120..=127) as u8;
-        let oid = self.0.get_bits(104..=119) as u16; // 2char
+
+    #[cfg(feature = "alloc")]
+    pub fn fmt(&self) -> alloc::string::String {
+        use alloc::format;
+        use alloc::string::ToString;
+        let mid = self.0.get_bits(120, 127) as u8;
+        let oid = self.0.get_bits(104, 119) as u16; // 2char
         let oid = core::str::from_utf8(&oid.to_be_bytes())
             .unwrap()
             .to_string();
-        let pnm = self.0.get_bits(64..=103) as u64; // 5char
+        let pnm = self.0.get_bits(64, 103) as u64; // 5char
         let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5])
             .unwrap()
             .to_string();
-        let prv_big = self.0.get_bits(60..=63) as u8; //
-        let prv_small = self.0.get_bits(56..=59) as u8; //
+        let prv_big = self.0.get_bits(60, 63) as u8; //
+        let prv_small = self.0.get_bits(56, 59) as u8; //
         let prv = format!("{}.{}", prv_big, prv_small);
-        let psn = self.0.get_bits(24..=55) as u32; //
-        let year = self.0.get_bits(12..=19) as u8; //
-        let month = self.0.get_bits(8..=11) as u8; //
+        let psn = self.0.get_bits(24, 55) as u32; //
+        let year = self.0.get_bits(12, 19) as u8; //
+        let month = self.0.get_bits(8, 11) as u8; //
         let mdt = format!("{}-{}", year as usize + 2000, month);
         let res = format!(
             "mid:{} oid:{} pnm:{} prv:{} psn:{} mdt:{}",
@@ -441,35 +447,42 @@ impl Cid {
     }
 
     pub fn mid(&self) -> u8 {
-        self.0.get_bits(120..=127) as u8
+        self.0.get_bits(120, 127) as u8
     }
-    pub fn oid(&self) -> String {
-        let oid = self.0.get_bits(104..=119) as u16; // 2char
+
+    #[cfg(feature = "alloc")]
+    pub fn oid(&self) -> alloc::string::String {
+        use alloc::string::ToString;
+        let oid = self.0.get_bits(104, 119) as u16; // 2char
         let oid = core::str::from_utf8(&oid.to_be_bytes())
             .unwrap()
             .to_string();
         oid
     }
-    pub fn pnm(&self) -> String {
-        let pnm = self.0.get_bits(64..=103) as u64; // 5char
+    #[cfg(feature = "alloc")]
+    pub fn pnm(&self) -> alloc::string::String {
+        use alloc::string::ToString;
+        let pnm = self.0.get_bits(64, 103) as u64; // 5char
         let pnm = core::str::from_utf8(&pnm.to_be_bytes()[0..5])
             .unwrap()
             .to_string();
         pnm
     }
-    pub fn prv(&self) -> String {
-        let prv_big = self.0.get_bits(60..=63) as u8; //
-        let prv_small = self.0.get_bits(56..=59) as u8; //
-        let prv = format!("{}.{}", prv_big, prv_small);
+    #[cfg(feature = "alloc")]
+    pub fn prv(&self) -> alloc::string::String {
+        let prv_big = self.0.get_bits(60, 63) as u8; //
+        let prv_small = self.0.get_bits(56, 59) as u8; //
+        let prv = alloc::format!("{}.{}", prv_big, prv_small);
         prv
     }
     pub fn psn(&self) -> u32 {
-        self.0.get_bits(24..=55) as u32
+        self.0.get_bits(24, 55) as u32
     }
-    pub fn mdt(&self) -> String {
-        let year = self.0.get_bits(12..=19) as u8; //
-        let month = self.0.get_bits(8..=11) as u8; //
-        let mdt = format!("{}-{}", year as usize + 2000, month);
+    #[cfg(feature = "alloc")]
+    pub fn mdt(&self) -> alloc::string::String {
+        let year = self.0.get_bits(12, 19) as u8; //
+        let month = self.0.get_bits(8, 11) as u8; //
+        let mdt = alloc::format!("{}-{}", year as usize + 2000, month);
         mdt
     }
 }
@@ -482,7 +495,7 @@ impl RawInterrupt {
 
 impl CmdReg {
     pub fn default(card_number: usize, cmd_number: u8) -> Self {
-        let mut cmd = CmdReg::new()
+        let cmd = CmdReg::new()
             .with_start_cmd(true)
             .with_use_hold_reg(true)
             .with_response_expect(true)
@@ -498,7 +511,7 @@ impl CmdReg {
     }
 
     pub fn with_data(card_number: usize, cmd_number: u8) -> Self {
-        let mut cmd = CmdReg::default(card_number, cmd_number).with_data_expected(true);
+        let cmd = CmdReg::default(card_number, cmd_number).with_data_expected(true);
         cmd
     }
 }
@@ -507,7 +520,7 @@ impl From<Cmd> for CmdReg {
     fn from(value: Cmd) -> Self {
         match value {
             Cmd::GoIdleState => {
-                let mut cmd0 = CmdReg::with_no_data(0, value.into()).with_send_initialization(true);
+                let cmd0 = CmdReg::with_no_data(0, value.into()).with_send_initialization(true);
                 cmd0
             }
             Cmd::SendIfCond | Cmd::AppCmd | Cmd::SendRelativeAddr | Cmd::SelectCard => {
@@ -515,16 +528,15 @@ impl From<Cmd> for CmdReg {
                 cmd
             }
             Cmd::SdSendOpCond => {
-                let mut cmd41 =
-                    CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
+                let cmd41 = CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
                 cmd41
             }
             Cmd::SendCsd => {
-                let mut cmd9 = CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
+                let cmd9 = CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
                 cmd9
             }
             Cmd::AllSendCid => {
-                let mut cmd2 = CmdReg::with_no_data(0, value.into())
+                let cmd2 = CmdReg::with_no_data(0, value.into())
                     .with_check_response_crc(false)
                     .with_response_length(true);
                 cmd2
@@ -534,7 +546,7 @@ impl From<Cmd> for CmdReg {
                 cmd
             }
             Cmd::WriteSingleBlock => {
-                let mut cmd = CmdReg::with_data(0, value.into()).with_transfer_dir(true);
+                let cmd = CmdReg::with_data(0, value.into()).with_transfer_dir(true);
                 cmd
             }
             _ => {
