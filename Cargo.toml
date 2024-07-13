@@ -9,4 +9,7 @@ edition = "2021"
 log = "0.4.17"
 preprint = "0.1.0"
 bitfield-struct = "0.8.0"   # no unsafe coe
-bit_field = "0.10.2" # no unsafe coe
+
+
+[features]
+alloc = []

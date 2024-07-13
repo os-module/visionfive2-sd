@@ -65,9 +65,27 @@ fn read_time() -> usize {
 }
 
 
-pub fn sleep(ms: usize) {
+pub fn sleep_ms(ms: usize) {
     let start = read_time();
-    while read_time() - start < ms * (VF2_FREQ / 1000) {
+    while read_time() - start < ms * VF2_FREQ / 1000 {
+        core::hint::spin_loop();
+    }
+}
+
+
+pub fn sleep_ms_until(ms: usize, mut f: impl FnMut() -> bool) {
+    let start = read_time();
+    while read_time() - start < ms * VF2_FREQ / 1000 {
+        if f() {
+            return;
+        }
+        core::hint::spin_loop();
+    }
+}
+
+pub fn sleep_us(us: usize) {
+    let start = read_time();
+    while read_time() - start < us * VF2_FREQ / 1000_000 {
         core::hint::spin_loop();
     }
 }
