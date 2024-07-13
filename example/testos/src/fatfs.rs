@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::{string::String, vec::Vec};
 
 use fatfs::{IoBase, Read, Seek, SeekFrom, Write};
 use log::error;
@@ -7,7 +7,7 @@ use visionfive2_sd::{SDIo, Vf2SdDriver};
 
 use crate::{println, SdIoImpl, SleepOpsImpl};
 
-pub fn init_fatfs(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) {
+pub fn init_fatfs(mmc: Vf2SdDriver<SdIoImpl, SleepOpsImpl>) {
     let buf_stream = BufStream::new(mmc);
     let fs = fatfs::FileSystem::new(buf_stream, fatfs::FsOptions::new()).unwrap();
     let root_dir = fs.root_dir();
@@ -16,7 +16,8 @@ pub fn init_fatfs(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) {
     root_dir.iter().for_each(|x| {
         if let Ok(x) = x {
             let name = x.file_name();
-            println!("name: {:?}", name);
+            let len = x.len();
+            println!("name: {:?}, size: {}", name, len);
         }
     });
     file.seek(SeekFrom::Start(0)).unwrap();
@@ -24,15 +25,29 @@ pub fn init_fatfs(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) {
     let read = file.read(&mut buf).unwrap();
     let str = String::from_utf8_lossy(&buf[..read]);
     println!("read {} bytes: {}", read, str);
+
+    let mut file = root_dir.open_file("bash").unwrap();
+    file.seek(SeekFrom::Start(0));
+    let mut buf = [0; 512];
+
+    let mut count = 0;
+    loop {
+        let r = file.read(&mut buf).unwrap();
+        if r == 0 {
+            break;
+        }
+        count += r;
+    }
+    println!("read bash size: {}bytes", count);
 }
 
 struct BufStream {
     offset: usize,
-    mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>,
+    mmc: Vf2SdDriver<SdIoImpl, SleepOpsImpl>,
 }
 
 impl BufStream {
-    pub fn new(mmc: Vf2SdDriver<SdIoImpl,SleepOpsImpl>) -> BufStream {
+    pub fn new(mmc: Vf2SdDriver<SdIoImpl, SleepOpsImpl>) -> BufStream {
         Self { offset: 0, mmc }
     }
 }

@@ -477,6 +477,8 @@ fn init_sdcard<T: SDIo, S: SleepOps>(io: &mut T) {
     // let raw_int_status = RawInterruptStatusReg::from(read_reg(io,RAW_INT_STATUS_REG));
     // pprintln!("RAW_INT_STATUS_REG: {:#?}", raw_int_status);
 
+    S::sleep_ms(1);
+
     select_card::<_, S>(io, rca);
 
     let status = StatusReg::from(read_reg(io, STATUS_REG));

@@ -66,7 +66,7 @@ pub fn main() {
     console::init_uart(UART_BASE);
     console::init_logger();
     println!("boot hart_id: {}", hart_id());
-    init_print(&PrePrint);
+    // init_print(&PrePrint);
     let mut sd = Vf2SdDriver::<_, SleepOpsImpl>::new(SdIoImpl);
     sd.init();
 
