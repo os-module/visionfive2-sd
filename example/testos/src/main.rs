@@ -25,6 +25,7 @@ mod boot;
 mod config;
 mod console;
 mod fatfs;
+mod static_keys;
 // mod fatfs2;
 mod sbi;
 
@@ -66,14 +67,17 @@ pub fn main() {
     console::init_uart(UART_BASE);
     console::init_logger();
     println!("boot hart_id: {}", hart_id());
+
+    unsafe {
+        static_keys::test();
+    }
+
     // init_print(&PrePrint);
     let mut sd = Vf2SdDriver::<_, SleepOpsImpl>::new(SdIoImpl);
     sd.init();
-
     // serial::init_log(log::LevelFilter::Error).unwrap();
     // let sd = SdHost;
     // sd.init().unwrap();
-
     println!("sd init ok");
     let mut buf = [0; 512];
     sd.read_block(0, &mut buf);

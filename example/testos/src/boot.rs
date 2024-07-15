@@ -2,8 +2,8 @@ use core::arch::asm;
 
 use buddy_system_allocator::LockedHeap;
 
-use crate::config::{CORES, STACK_SIZE, VF2_FREQ};
 use crate::config::HEAP_SIZE;
+use crate::config::{CORES, STACK_SIZE, VF2_FREQ};
 
 #[global_allocator]
 static mut HEAP_ALLOCATOR: LockedHeap<32> = LockedHeap::empty();
@@ -60,10 +60,17 @@ pub fn hart_id() -> usize {
     id
 }
 
-fn read_time() -> usize {
+pub fn read_time() -> usize {
     riscv::register::time::read()
 }
 
+pub fn read_time_ms() -> usize {
+    read_time() / (VF2_FREQ / 1000)
+}
+
+pub fn read_time_us() -> usize {
+    read_time() / (VF2_FREQ / 1000_000)
+}
 
 pub fn sleep_ms(ms: usize) {
     let start = read_time();
@@ -71,7 +78,6 @@ pub fn sleep_ms(ms: usize) {
         core::hint::spin_loop();
     }
 }
-
 
 pub fn sleep_ms_until(ms: usize, mut f: impl FnMut() -> bool) {
     let start = read_time();
