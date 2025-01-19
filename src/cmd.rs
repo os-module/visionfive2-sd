@@ -31,9 +31,9 @@ pub enum Cmd {
     // Private
     ResetClock,
 }
-impl Into<u8> for Cmd {
-    fn into(self) -> u8 {
-        match self {
+impl From<Cmd> for u8 {
+    fn from(val: Cmd) -> Self {
+        match val {
             Cmd::GoIdleState => 0,
             Cmd::AllSendCid => 2,
             Cmd::SendRelativeAddr => 3,
@@ -63,7 +63,7 @@ impl Into<u8> for Cmd {
             Cmd::SetClrCardDetect => 42,
             Cmd::SendScr => 51,
             _ => {
-                panic!("Not implemented for cmd {:?}", self);
+                panic!("Not implemented for cmd {:?}", val);
             }
         }
     }

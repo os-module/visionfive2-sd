@@ -3,7 +3,7 @@ use crate::utils::GetBit;
 use bitfield_struct::bitfield;
 
 pub const SDIO_BASE: usize = 0x16020000;
-pub const CTRL_REG: usize = SDIO_BASE + 0x00;
+pub const CTRL_REG: usize = SDIO_BASE;
 pub const POWER_REG: usize = SDIO_BASE + 0x04;
 pub const BLK_SIZE_REG: usize = SDIO_BASE + 0x1c;
 pub const BYTE_CNT_REG: usize = SDIO_BASE + 0x20;
@@ -495,24 +495,24 @@ impl RawInterrupt {
 
 impl CmdReg {
     pub fn default(card_number: usize, cmd_number: u8) -> Self {
-        let cmd = CmdReg::new()
+        
+        CmdReg::new()
             .with_start_cmd(true)
             .with_use_hold_reg(true)
             .with_response_expect(true)
             .with_wait_prvdata_complete(true)
             .with_check_response_crc(true)
             .with_card_number(card_number as u16)
-            .with_cmd_index(cmd_number as u16);
-        cmd
+            .with_cmd_index(cmd_number as u16)
     }
     pub fn with_no_data(card_number: usize, cmd_number: u8) -> Self {
-        let cmd = CmdReg::default(card_number, cmd_number);
-        cmd
+        
+        CmdReg::default(card_number, cmd_number)
     }
 
     pub fn with_data(card_number: usize, cmd_number: u8) -> Self {
-        let cmd = CmdReg::default(card_number, cmd_number).with_data_expected(true);
-        cmd
+        
+        CmdReg::default(card_number, cmd_number).with_data_expected(true)
     }
 }
 
@@ -520,34 +520,34 @@ impl From<Cmd> for CmdReg {
     fn from(value: Cmd) -> Self {
         match value {
             Cmd::GoIdleState => {
-                let cmd0 = CmdReg::with_no_data(0, value.into()).with_send_initialization(true);
-                cmd0
+                
+                CmdReg::with_no_data(0, value.into()).with_send_initialization(true)
             }
             Cmd::SendIfCond | Cmd::AppCmd | Cmd::SendRelativeAddr | Cmd::SelectCard => {
-                let cmd = CmdReg::with_no_data(0, value.into());
-                cmd
+                
+                CmdReg::with_no_data(0, value.into())
             }
             Cmd::SdSendOpCond => {
-                let cmd41 = CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
-                cmd41
+                
+                CmdReg::with_no_data(0, value.into()).with_check_response_crc(false)
             }
             Cmd::SendCsd => {
-                let cmd9 = CmdReg::with_no_data(0, value.into()).with_check_response_crc(false);
-                cmd9
+                
+                CmdReg::with_no_data(0, value.into()).with_check_response_crc(false)
             }
             Cmd::AllSendCid => {
-                let cmd2 = CmdReg::with_no_data(0, value.into())
+                
+                CmdReg::with_no_data(0, value.into())
                     .with_check_response_crc(false)
-                    .with_response_length(true);
-                cmd2
+                    .with_response_length(true)
             }
             Cmd::SendScr | Cmd::ReadSingleBlock => {
-                let cmd = CmdReg::with_data(0, value.into());
-                cmd
+                
+                CmdReg::with_data(0, value.into())
             }
             Cmd::WriteSingleBlock => {
-                let cmd = CmdReg::with_data(0, value.into()).with_transfer_dir(true);
-                cmd
+                
+                CmdReg::with_data(0, value.into()).with_transfer_dir(true)
             }
             _ => {
                 panic!("Not implemented")
