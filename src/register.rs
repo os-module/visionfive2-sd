@@ -26,9 +26,9 @@ pub const FIFO_DATA_REG: usize = SDIO_BASE + 0x600;
 
 macro_rules! impl_into_u32 {
     ($name:ident) => {
-        impl Into<u32> for $name {
-            fn into(self) -> u32 {
-                self.0
+        impl From<$name> for u32 {
+            fn from(val: $name) -> u32 {
+                val.0
             }
         }
     };
