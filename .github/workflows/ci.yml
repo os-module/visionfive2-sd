@@ -25,10 +25,18 @@ jobs:
     - name: Check code format
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo hack clippy --target ${{ matrix.targets }} --each-feature
+      run: cargo hack clippy --target ${{ matrix.targets }} --each-feature -- -D warnings
     - name: Build
       run: cargo hack build --target ${{ matrix.targets }} --each-feature
 
+    - name: Clippy on testos
+      working-directory: example/testos
+      run: cargo clippy --target ${{ matrix.targets }} -- -D warnings
+
+    - name: Build testos
+      working-directory: example/testos
+      run: cargo build --target ${{ matrix.targets }}
+
     # FIXME: cp: cannot create regular file '../../../tftpboot/': Not a directory
-    - name: Run Example
+    - name: Run testos
       run: cd example && make all
