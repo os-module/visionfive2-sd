@@ -1,3 +1,4 @@
+#![allow(clippy::needless_range_loop)]
 use crate::boot::{hart_id, read_time, read_time_us};
 use crate::println;
 use core::arch::asm;
@@ -138,8 +139,7 @@ impl FlagCache {
     }
 }
 
-const ARRAY_REPEAT_VALUE: FlagCache = FlagCache::new();
-static FLAGS: [FlagCache; 10000] = [ARRAY_REPEAT_VALUE; 10000];
+static FLAGS: [FlagCache; 10000] = [const { FlagCache::new() }; 10000];
 
 static TIME_ATOMIC: AtomicUsize = AtomicUsize::new(0);
 static TIME_KEYS: AtomicUsize = AtomicUsize::new(0);
@@ -158,7 +158,7 @@ fn test_mass_static_atomic(cpu: usize) {
     let end1 = read_time_us() - now;
     println!("test_atomic: {}us", end1);
     println!("test_atomic: {}", count);
-    TIME_ATOMIC.store(end1 as usize, atomic::Ordering::SeqCst);
+    TIME_ATOMIC.store(end1, atomic::Ordering::SeqCst);
 }
 
 fn test_mass_static_keys(cpu: usize) {
@@ -177,7 +177,7 @@ fn test_mass_static_keys(cpu: usize) {
     let end2 = read_time_us() - now;
     println!("test_static_keys: {}us", end2);
     println!("test_static_keys: {}", count);
-    TIME_KEYS.store(end2 as usize, atomic::Ordering::SeqCst);
+    TIME_KEYS.store(end2, atomic::Ordering::SeqCst);
 }
 
 #[repr(align(64))]
@@ -196,7 +196,7 @@ impl DataCache {
     pub fn fill(&mut self, val: u8) {
         let data = &mut self.data;
         for i in 0..data.len() {
-            data[i] = (data[i] + val as u64);
+            data[i] += val as u64;
         }
     }
 }
