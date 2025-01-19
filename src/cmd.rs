@@ -1,3 +1,4 @@
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Copy, Clone)]
 pub enum Cmd {
     GoIdleState,
