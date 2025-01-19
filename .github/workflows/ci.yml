@@ -10,9 +10,11 @@ jobs:
       matrix:
         rust-toolchain: [nightly]
         targets: [riscv64gc-unknown-none-elf]
-        features: ["", "--all-features"] # default features or all features
     steps:
     - uses: actions/checkout@v4
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-hack,cargo-binstall,cargo-binutils
     - uses: dtolnay/rust-toolchain@nightly
       with:
         toolchain: ${{ matrix.rust-toolchain }}
@@ -23,8 +25,8 @@ jobs:
     - name: Check code format
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo clippy --target ${{ matrix.targets }} ${{ matrix.features }} -- -D warnings
+      run: cargo hack clippy --target ${{ matrix.targets }} --each-feature
     - name: Build
-      run: cargo build --target ${{ matrix.targets }} ${{ matrix.features }}
+      run: cargo hack build --target ${{ matrix.targets }} --each-feature
     - name: Run Example
       run: cd example && make all
