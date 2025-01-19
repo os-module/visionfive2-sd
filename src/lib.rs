@@ -358,7 +358,10 @@ fn check_cid<T: SDIo, S: SleepOps>(io: &mut T) {
     );
     if let Some(resp) = resp {
         // to 128 bit
-        let resp = resp[0] as u128 | ((resp[1] as u128) << 32) | ((resp[2] as u128) << 64) | ((resp[3] as u128) << 96);
+        let resp = resp[0] as u128
+            | ((resp[1] as u128) << 32)
+            | ((resp[2] as u128) << 64)
+            | ((resp[3] as u128) << 96);
         let cid = Cid::new(resp);
         #[cfg(feature = "alloc")]
         pprintln!("cid: {}", cid.fmt());
@@ -429,7 +432,8 @@ fn init_sdcard<T: SDIo, S: SleepOps>(io: &mut T) {
     // read DMA Descriptor List Base Address Register
     let dma_desc_base_lower = read_reg(io, DBADDRL_REG);
     let dma_desc_base_upper = read_reg(io, DBADDRU_REG);
-    let dma_desc_base: usize = dma_desc_base_lower as usize | ((dma_desc_base_upper as usize) << 32);
+    let dma_desc_base: usize =
+        dma_desc_base_lower as usize | ((dma_desc_base_upper as usize) << 32);
     info!("dma_desc_base: {:#x?}", dma_desc_base);
     // read clock divider register
     let clock_divider = read_reg(io, CLK_DIVIDER_REG);

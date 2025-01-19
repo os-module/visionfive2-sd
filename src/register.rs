@@ -495,7 +495,6 @@ impl RawInterrupt {
 
 impl CmdReg {
     pub fn default(card_number: usize, cmd_number: u8) -> Self {
-        
         CmdReg::new()
             .with_start_cmd(true)
             .with_use_hold_reg(true)
@@ -506,12 +505,10 @@ impl CmdReg {
             .with_cmd_index(cmd_number as u16)
     }
     pub fn with_no_data(card_number: usize, cmd_number: u8) -> Self {
-        
         CmdReg::default(card_number, cmd_number)
     }
 
     pub fn with_data(card_number: usize, cmd_number: u8) -> Self {
-        
         CmdReg::default(card_number, cmd_number).with_data_expected(true)
     }
 }
@@ -520,35 +517,20 @@ impl From<Cmd> for CmdReg {
     fn from(value: Cmd) -> Self {
         match value {
             Cmd::GoIdleState => {
-                
                 CmdReg::with_no_data(0, value.into()).with_send_initialization(true)
             }
             Cmd::SendIfCond | Cmd::AppCmd | Cmd::SendRelativeAddr | Cmd::SelectCard => {
-                
                 CmdReg::with_no_data(0, value.into())
             }
             Cmd::SdSendOpCond => {
-                
                 CmdReg::with_no_data(0, value.into()).with_check_response_crc(false)
             }
-            Cmd::SendCsd => {
-                
-                CmdReg::with_no_data(0, value.into()).with_check_response_crc(false)
-            }
-            Cmd::AllSendCid => {
-                
-                CmdReg::with_no_data(0, value.into())
-                    .with_check_response_crc(false)
-                    .with_response_length(true)
-            }
-            Cmd::SendScr | Cmd::ReadSingleBlock => {
-                
-                CmdReg::with_data(0, value.into())
-            }
-            Cmd::WriteSingleBlock => {
-                
-                CmdReg::with_data(0, value.into()).with_transfer_dir(true)
-            }
+            Cmd::SendCsd => CmdReg::with_no_data(0, value.into()).with_check_response_crc(false),
+            Cmd::AllSendCid => CmdReg::with_no_data(0, value.into())
+                .with_check_response_crc(false)
+                .with_response_length(true),
+            Cmd::SendScr | Cmd::ReadSingleBlock => CmdReg::with_data(0, value.into()),
+            Cmd::WriteSingleBlock => CmdReg::with_data(0, value.into()).with_transfer_dir(true),
             _ => {
                 panic!("Not implemented")
             }
