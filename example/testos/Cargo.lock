@@ -35,12 +35,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cfg-if"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
 name = "critical-section"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -63,11 +57,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jtable"
-version = "0.1.0"
-source = "git+https://github.com/os-module/eebpf.git#445247dc63138ea3a7170acc8a9ce6a145503c45"
-
-[[package]]
 name = "lock_api"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -82,27 +71,6 @@ name = "log"
 version = "0.4.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
-
-[[package]]
-name = "naked-function"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b8d5fca6ab1e6215b010aefd3b9ac5aae369dae0faea3a7f34f296cc9f719ac"
-dependencies = [
- "cfg-if",
- "naked-function-macro",
-]
-
-[[package]]
-name = "naked-function-macro"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b4123e70df5fe0bb370cff166ae453b9c5324a2cfc932c0f7e55498147a0475"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "paste"
@@ -202,10 +170,7 @@ version = "0.1.0"
 dependencies = [
  "buddy_system_allocator",
  "fatfs",
- "jtable",
  "log",
- "naked-function",
- "paste",
  "preprint",
  "riscv",
  "spin 0.9.8",

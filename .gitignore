@@ -16,3 +16,5 @@ rust-project.json
 
 
 .idea
+
+*.bin
