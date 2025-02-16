@@ -1,3 +1,5 @@
+#![allow(clippy::erasing_op, clippy::identity_op)]
+
 use core::fmt::{Arguments, Write};
 
 use log::{self, Level, LevelFilter, Log, Metadata, Record};

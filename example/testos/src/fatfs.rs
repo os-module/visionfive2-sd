@@ -108,7 +108,7 @@ impl Write for BufStream {
                 self.mmc.read_block(block_id, &mut tmp_buf);
                 tmp_buf[block_offset..block_offset + copy_len]
                     .copy_from_slice(&buf[write_len..write_len + copy_len]);
-                self.mmc.write_block(block_id, &mut tmp_buf);
+                self.mmc.write_block(block_id, &tmp_buf);
             } else {
                 self.mmc
                     .write_block(block_id, &buf[write_len..write_len + copy_len]);

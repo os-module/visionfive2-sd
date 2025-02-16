@@ -63,14 +63,14 @@ mod tests {
     #[test]
     fn test_get_bit() {
         let val = 0b1010_1010u32;
-        assert_eq!(val.get_bit(0), false);
-        assert_eq!(val.get_bit(1), true);
-        assert_eq!(val.get_bit(2), false);
-        assert_eq!(val.get_bit(3), true);
-        assert_eq!(val.get_bit(4), false);
-        assert_eq!(val.get_bit(5), true);
-        assert_eq!(val.get_bit(6), false);
-        assert_eq!(val.get_bit(7), true);
+        assert!(!val.get_bit(0));
+        assert!(val.get_bit(1));
+        assert!(!val.get_bit(2));
+        assert!(val.get_bit(3));
+        assert!(!val.get_bit(4));
+        assert!(val.get_bit(5));
+        assert!(!val.get_bit(6));
+        assert!(val.get_bit(7));
     }
 
     #[test]
